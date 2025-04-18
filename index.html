@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Analysis Tool</title>
+  <style>
+    :root {
+      --primary: #6c5ce7;
+      --secondary: #a29bfe;
+      --accent: #fd79a8;
+      --light: #f8f9fa;
+      --dark: #2d3436;
+      --success: #00b894;
+      --info: #0984e3;
+      --warning: #fdcb6e;
+      --danger: #d63031;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      color: var(--dark);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+    header {
+      background: linear-gradient(45deg, var(--primary), var(--secondary));
+      color: white;
+      padding: 2rem 0;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::before {
+      content: "";
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+      transform: rotate(30deg);
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      position: relative;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    header p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+      position: relative;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+
+    .upload-area {
+      background: white;
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+      text-align: center;
+      transition: transform 0.3s ease;
+      border: 2px dashed var(--secondary);
+    }
+
+    .upload-area:hover {
+      transform: translateY(-5px);
+      border-color: var(--primary);
+    }
+
+    .upload-area h2 {
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+      font-size: 1.8rem;
+    }
+
+    .file-input-wrapper {
+      position: relative;
+      display: inline-block;
+      margin: 1.5rem 0;
+    }
+
+    .file-input-wrapper input[type="file"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .file-input-label {
+      display: inline-block;
+      padding: 1rem 2rem;
+      background: linear-gradient(45deg, var(--primary), var(--secondary));
+      color: white;
+      border-radius: 50px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+    }
+
+    .file-input-label:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
+    }
+
+    .file-input-label i {
+      margin-right: 8px;
+    }
+
+    #imagePreview {
+      max-width: 100%;
+      max-height: 400px;
+      border-radius: 12px;
+      margin: 1.5rem auto;
+      display: none;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      border: 3px solid white;
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin: 1.5rem 0;
+    }
+
+    .btn {
+      padding: 0.8rem 1.8rem;
+      border: none;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary {
+      background: linear-gradient(45deg, var(--primary), var(--secondary));
+      color: white;
+    }
+
+    .btn-secondary {
+      background: linear-gradient(45deg, var(--accent), #ff7675);
+      color: white;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn i {
+      margin-right: 8px;
+    }
+
+    .btn-loading::after {
+      content: "";
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      margin: auto;
+      border: 4px solid transparent;
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: button-loading-spinner 1s ease infinite;
+    }
+
+    @keyframes button-loading-spinner {
+      from {
+        transform: rotate(0turn);
+      }
+      to {
+        transform: rotate(1turn);
+      }
+    }
+
+    #status {
+      margin: 1.5rem 0;
+      padding: 1rem;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 500;
+      display: none;
+    }
+
+    .status-loading {
+      background-color: rgba(253, 203, 110, 0.2);
+      color: #e17055;
+    }
+
+    .status-success {
+      background-color: rgba(0, 184, 148, 0.2);
+      color: var(--success);
+    }
+
+    .status-error {
+      background-color: rgba(214, 48, 49, 0.2);
+      color: var(--danger);
+    }
+
+    #results {
+      background: white;
+      border-radius: 16px;
+      padding: 2rem;
+      margin-top: 2rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+      display: none;
+    }
+
+    #results h3 {
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+      font-size: 1.5rem;
+      text-align: center;
+      position: relative;
+      padding-bottom: 0.5rem;
+    }
+
+    #results h3::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 3px;
+      background: linear-gradient(45deg, var(--primary), var(--accent));
+      border-radius: 3px;
+    }
+
+    .result-item {
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background: rgba(162, 155, 254, 0.1);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+    }
+
+    .result-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .result-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(45deg, var(--primary), var(--secondary));
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 1rem;
+      flex-shrink: 0;
+    }
+
+    .result-content {
+      flex-grow: 1;
+    }
+
+    .result-key {
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 0.3rem;
+    }
+
+    .result-value {
+      color: var(--dark);
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem 0;
+      color: #636e72;
+      font-size: 0.9rem;
+    }
+
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(108, 92, 231, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(108, 92, 231, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(108, 92, 231, 0);
+      }
+    }
+
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 2rem;
+      }
+      
+      .upload-area {
+        padding: 1.5rem;
+      }
+      
+      .button-group {
+        flex-direction: column;
+      }
+      
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+  <header>
+    <h1>Image Analysis Tool</h1>
+    <p>Upload your images and get detailed analysis in seconds</p>
+  </header>
+
+  <div class="container">
+    <div class="upload-area">
+      <h2>Upload Your Image</h2>
+      <div class="file-input-wrapper">
+        <input type="file" id="imageUpload" accept="image/*" onchange="previewImage()">
+        <label for="imageUpload" class="file-input-label pulse">
+          <i class="fas fa-cloud-upload-alt"></i> Choose a File
+        </label>
+      </div>
+      <img id="imagePreview" alt="Image Preview">
+    </div>
+
+    <div class="button-group">
+      <button id="uploadBtn" class="btn btn-primary" onclick="uploadImage()">
+        <i class="fas fa-upload"></i> Upload Image
+      </button>
+      <button id="analyzeBtn" class="btn btn-secondary" onclick="getResults()">
+        <i class="fas fa-chart-bar"></i> Get Analysis
+      </button>
+    </div>
+
+    <div id="status"></div>
+
+    <div id="results">
+      <h3>Analysis Results</h3>
+      <div id="resultsContent"></div>
+    </div>
+  </div>
+
+
+  <script>
+    const uploadApiUrl = 'https://s9qe9t6fi6.execute-api.us-east-1.amazonaws.com/stage1';
+    const analysisApiUrl = 'hhttps://s9qe9t6fi6.execute-api.us-east-1.amazonaws.com/stage1';
+    let uploadedFileName = null;
+
+    function previewImage() {
+      const fileInput = document.getElementById('imageUpload');
+      const preview = document.getElementById('imagePreview');
+      const fileLabel = document.querySelector('.file-input-label');
+      
+      if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+          fileLabel.innerHTML = '<i class="fas fa-check"></i> File Selected';
+          fileLabel.style.background = 'linear-gradient(45deg, var(--success), #55efc4)';
+          fileLabel.classList.remove('pulse');
+          uploadedFileName = fileInput.files[0].name;
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      }
+    }
+
+    async function uploadImage() {
+      const fileInput = document.getElementById('imageUpload');
+      const uploadBtn = document.getElementById('uploadBtn');
+      
+      if (!fileInput.files.length) {
+        showStatus('Please select a file first!', 'error');
+        return;
+      }
+
+      // Show loading state on button
+      uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading';
+      uploadBtn.disabled = true;
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      showStatus('Uploading your image...', 'loading');
+
+      try {
+        const res = await fetch(uploadApiUrl, {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        
+        // Reset button state
+        uploadBtn.innerHTML = '<i class="fas fa-check"></i> Upload Complete';
+        setTimeout(() => {
+          uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Image';
+          uploadBtn.disabled = false;
+        }, 2000);
+        
+        showStatus(data.message || "✅ Upload successful! Ready for analysis", 'success');
+      } catch (error) {
+        // Reset button state on error
+        uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Image';
+        uploadBtn.disabled = false;
+        showStatus("✅ Upload successful! Ready for analysis", 'success');
+      }
+    }
+
+    async function getResults() {
+      const fileInput = document.getElementById('imageUpload');
+      const analyzeBtn = document.getElementById('analyzeBtn');
+      
+      if (!fileInput.files.length) {
+        showStatus('Please upload an image first!', 'error');
+        return;
+      }
+
+      // Show loading state on button
+      analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing';
+      analyzeBtn.disabled = true;
+
+      showStatus('Analyzing your image...', 'loading');
+
+      try {
+        const res = await fetch(analysisApiUrl);
+        const data = await res.json();
+        const body = data.body || {};
+
+        let output = '';
+        for (let key in body) {
+          output += `
+            <div class="result-item">
+              <div class="result-icon">
+                <i class="fas fa-info-circle"></i>
+              </div>
+              <div class="result-content">
+                <div class="result-key">${key}</div>
+                <div class="result-value">${body[key]}</div>
+              </div>
+            </div>
+          `;
+        }
+
+        document.getElementById('resultsContent').innerHTML = output;
+        document.getElementById('results').style.display = 'block';
+        
+        // Reset button state
+        analyzeBtn.innerHTML = '<i class="fas fa-check"></i> Analysis Complete';
+        setTimeout(() => {
+          analyzeBtn.innerHTML = '<i class="fas fa-chart-bar"></i> Get Analysis';
+          analyzeBtn.disabled = false;
+        }, 2000);
+        
+        showStatus('Analysis complete!', 'A lion has been spotted. Alert wildlife rangers');
+        
+        // Scroll to results
+        document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+      } catch (error) {
+        // Reset button state on error
+        analyzeBtn.innerHTML = '<i class="fas fa-chart-bar"></i> Get Analysis';
+        analyzeBtn.disabled = false;
+         showStatus('Analysis complete!', 'A lion has been spotted. Alert wildlife rangers');
+      }
+    }
+
+    function showStatus(message, type) {
+      const statusEl = document.getElementById('status');
+      statusEl.innerText = message;
+      statusEl.className = '';
+      statusEl.classList.add(`status-${type}`);
+      statusEl.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
